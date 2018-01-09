@@ -2,7 +2,10 @@ package com.packt.webstore.domain.repository.impl;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.stereotype.Repository;
 
@@ -30,7 +33,7 @@ public class InMemoryProductRepository implements ProductRepository {
 		laptop_dell.setUnitsInStock(1000);
 		
 		
-		Product tablet_Nexus = new Product("P12346", "Nexus 7", new BigDecimal(300));
+		Product tablet_Nexus = new Product("P123456", "Nexus 7", new BigDecimal(300));
 		tablet_Nexus.setDescription("Opis Nexusa");
 		tablet_Nexus.setCategory("Tablet");
 		tablet_Nexus.setManufacturer("Google");
@@ -46,16 +49,22 @@ public class InMemoryProductRepository implements ProductRepository {
 		return listOfProducts;
 	}
 
+
 	public Product getProductById(String productId) {
+		
 		Product productById = null;
-		for (Product product : listOfProducts) {
-			if(product!=null && product.getProductId()!=null && product.getProductId().equals(productId)) {
+		
+		for(Product product : listOfProducts) {
+			if(product!=null && product.getProductId()!=null && product.getProductId().equals(productId)){
 				productById = product;
 				break;
-			} if(productById == null) {
-				throw new IllegalArgumentException("Brak produktu o wskazanym id: "+ productId);
 			}
 		}
+		
+		if(productById == null){
+			throw new IllegalArgumentException("Brak produktu o wskazanym id: "+ productId);
+		}
+		
 		return productById;
 	}
 
@@ -66,6 +75,28 @@ public class InMemoryProductRepository implements ProductRepository {
 				productsByCategory.add(product);
 			}
 		}
+		return productsByCategory;
+	}
+
+	public Set<Product> getProductsByFilter(Map<String, List<String>> filterParams) {
+		Set <Product> productsByBrand = new HashSet<Product>();
+		Set <Product> productsByCategory = new HashSet<Product>();
+		Set <String> criterias = filterParams.keySet();
+		if(criterias.contains("brand")) {
+			for(String brandName:filterParams.get("brand")) {
+				for(Product product: listOfProducts) {
+					if(brandName.equalsIgnoreCase(product.getManufacturer())) {
+						productsByBrand.add(product);
+					}
+				}
+			}
+		}
+		if (criterias.contains("category")) {
+			for(String category:filterParams.get("category")) {
+				productsByCategory.addAll(this.getProductsByCategory(category));
+			}
+		}
+		productsByCategory.retainAll(productsByBrand);
 		return productsByCategory;
 	}
 	
